@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RSI Bot Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="font-family: Arial, sans-serif; padding: 20px;">
+  <h2>Live RSI Chart</h2>
+  <canvas id="rsiChart" width="800" height="300"></canvas>
+
+  <h2>Live Price Trend</h2>
+  <canvas id="priceChart" width="800" height="300"></canvas>
+
+  <h2>Active Orders</h2>
+  <pre id="orders"></pre>
+
+  <script>
+    async function fetchStatus() {
+      const res = await fetch('/status');
+      const data = await res.json();
+      document.getElementById("orders").innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function fetchCharts() {
+      const res = await fetch('/trend_data');
+      const data = await res.json();
+
+      const rsiCtx = document.getElementById("rsiChart").getContext("2d");
+      const priceCtx = document.getElementById("priceChart").getContext("2d");
+
+      const labels = data.timestamps;
+
+      const rsiDatasets = Object.entries(data.rsi_series).map(([ticker, values]) => ({
+        label: ticker,
+        data: values,
+        borderWidth: 2,
+        fill: false,
+        borderColor: '#' + Math.floor(Math.random()*16777215).toString(16)
+      }));
+
+      const priceDatasets = Object.entries(data.price_series).map(([ticker, values]) => ({
+        label: ticker,
+        data: values,
+        borderWidth: 2,
+        fill: false,
+        borderColor: '#' + Math.floor(Math.random()*16777215).toString(16)
+      }));
+
+      new Chart(rsiCtx, {
+        type: 'line',
+        data: { labels: labels, datasets: rsiDatasets },
+        options: { scales: { y: { beginAtZero: true, suggestedMax: 100 } } }
+      });
+
+      new Chart(priceCtx, {
+        type: 'line',
+        data: { labels: labels, datasets: priceDatasets },
+        options: { scales: { y: { beginAtZero: false } } }
+      });
+    }
+
+    fetchStatus();
+    fetchCharts();
+    setInterval(fetchStatus, 30000);
+  </script>
+
+  <h2>Live PnL Summary</h2>
+  <pre id="pnl"></pre>
+  <script>
+    async function fetchPnl() {
+      const res = await fetch('/pnl');
+      const data = await res.json();
+      document.getElementById("pnl").innerText = JSON.stringify(data, null, 2);
+    }
+    fetchPnl();
+    setInterval(fetchPnl, 30000);
+  </script>
+    
+</body>
+</html>
