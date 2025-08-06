@@ -1,23 +1,12 @@
-# Multi-stage build for production
-FROM python:3.12-slim as builder
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --user -r requirements.txt
-
 FROM python:3.12-slim
-WORKDIR /app
 
-COPY --from=builder /root/.local /root/.local
+WORKDIR /app
 COPY . .
 
-# Security hardening
-RUN useradd -m trader && \
-    chown -R trader:trader /app && \
-    chmod 755 /app/scripts/*.sh
+RUN pip install --no-cache-dir -r requirements.txt && \
+    useradd -m trader && \
+    chown -R trader:trader /app
 
 USER trader
-ENV PATH=/root/.local/bin:$PATH \
-    PYTHONUNBUFFERED=1
 
 CMD ["python", "-m", "bot.main"]
